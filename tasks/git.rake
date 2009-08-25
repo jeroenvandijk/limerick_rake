@@ -75,24 +75,15 @@ module GitCommands
     # The following are close
     # git clone --bare => does not provide a working tree
     # git clone --no-checkout => tries to override the 
-
-    tmpdir(tmp_dir) do
-      run "git clone #{url} tmpdir"
+    Dir.chdir(current_dir) do
+      run "git clone #{url} #{tmp_dir}"
       %w(.git .gitignore).each do |src|
-        FileUtils.mv("tmpdir/#{src}", current_dir, :force => true)
+        run "mv #{File.join(tmp_dir, src)} ."
       end
+
+      FileUtils.remove_dir(tmp_dir, true)
     end
   end
-  
-  def self.tmpdir(tmpdir)
-    FileUtils.mkdir(tmpdir)
-    Dir.chdir(tmpdir) do |path|
-      yield(path)
-    end
-    FileUtils.remove_dir(tmpdir, true)
-  end
-  
-  
 
 end
  
