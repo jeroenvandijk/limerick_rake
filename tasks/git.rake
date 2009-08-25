@@ -66,9 +66,42 @@ module GitCommands
     ensure_clean_working_directory!
     run "git pull git://github.com/thoughtbot/suspenders.git master"
   end
+
+  def self.add_repo(url, dest)
+    current_dir = File.join(Rake::original_dir, dest || "")
+    tmp_dir = "git_#{Time.now.to_i}"
+    
+    # Unfortunately I haven't found a git command for this
+    # The following are close
+    # git clone --bare => does not provide a working tree
+    # git clone --no-checkout => tries to override the 
+
+    tmpdir(tmp_dir) do
+      run "git clone #{url} tmpdir"
+      %w(.git .gitignore).each do |src|
+        FileUtils.mv("tmpdir/#{src}", current_dir, :force => true)
+      end
+    end
+  end
+  
+  def self.tmpdir(tmpdir)
+    FileUtils.mkdir(tmpdir)
+    Dir.chdir(tmpdir) do |path|
+      yield(path)
+    end
+    FileUtils.remove_dir(tmpdir, true)
+  end
+  
+  
+
 end
  
 namespace :git do
+	desc "Adds the .git directory of the given git repo to the given destination (current dir by default)"
+  task :add_repo, :repo, :destination do |t, args|
+    GitCommands.add_repo(args.repo, args.destination)
+  end
+  
   namespace :push do
     desc "Reset origin's staging branch to be the current branch."
     task :staging do
